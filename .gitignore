@@ -1,1 +1,17 @@
 .codex/
+
+# Dependencies
+backend-api/node_modules/
+frontend/node_modules/
+
+# Build outputs
+backend-api/dist/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Local environment files
+backend-api/.env
+frontend/.env
+
+# OS/editor noise
+.DS_Store
