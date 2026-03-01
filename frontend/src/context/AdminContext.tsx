@@ -10,6 +10,7 @@ import {
   SubscriptionPlan,
   WebhookEvent
 } from "../types";
+import { useToast } from "./ToastContext";
 
 type CustomerForm = { name: string; email: string; phone: string; address: string };
 type KycForm = { documentType: string; documentNumber: string; notes: string; rejectReason: string };
@@ -74,6 +75,7 @@ const AdminContext = createContext<AdminContextValue | undefined>(undefined);
 const DEFAULT_PAGINATION: PaginationMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
+  const { showToast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customersPagination, setCustomersPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION);
   const [customersPage, setCustomersPage] = useState(1);
@@ -108,7 +110,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const handleError = (err: unknown, fallback: string) => {
-    setError(err instanceof ApiError ? err.message : fallback);
+    const message = err instanceof ApiError ? err.message : fallback;
+    setError(message);
+    showToast("error", message);
   };
 
   const loadCustomers = async (query = "", page = customersPage) => {
@@ -218,6 +222,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       setCustomersPage(1);
       setSelectedCustomerId(created.customer.id);
       await refreshAll(created.customer.id, search, 1);
+      showToast("success", "Customer created successfully.");
       return created;
     } catch (err) {
       handleError(err, "Failed to create customer");
@@ -249,6 +254,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       });
       setSubscriptionPlanForm({ name: "", description: "", amount: "", currency: "NGN", isActive: true });
       await loadSubscriptionPlans();
+      showToast("success", "Subscription plan created successfully.");
     } catch (err) {
       handleError(err, "Failed to create subscription plan");
     } finally {
@@ -273,6 +279,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       });
       await loadSubscriptionPlans();
       await refreshAll(selectedCustomerId || undefined, search, customersPage, webhookEventsPage, auditLogsPage);
+      showToast("success", "Subscription plan updated successfully.");
     } catch (err) {
       handleError(err, "Failed to update subscription plan");
     } finally {
@@ -287,6 +294,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRequest(`/subscription-plans/${planId}`, { method: "DELETE" });
       await loadSubscriptionPlans();
+      showToast("success", "Subscription plan deleted successfully.");
     } catch (err) {
       handleError(err, "Failed to delete subscription plan");
     } finally {
@@ -314,6 +322,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         })
       });
       await refreshAll(selectedCustomerId, search, customersPage, webhookEventsPage, auditLogsPage);
+      showToast("success", "KYC submitted successfully.");
     } catch (err) {
       handleError(err, "Failed to submit KYC");
     } finally {
@@ -350,6 +359,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         });
       }
       await refreshAll(targetCustomerId, search, customersPage, webhookEventsPage, auditLogsPage);
+      showToast(
+        "success",
+        decision === "pending"
+          ? "KYC moved back to pending."
+          : decision === "approve"
+            ? "KYC approved successfully."
+            : "KYC rejected successfully."
+      );
     } catch (err) {
       handleError(err, decision === "pending" ? "Failed to reset KYC to pending" : `Failed to ${decision} KYC`);
     } finally {
@@ -373,6 +390,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ planId: subForm.planId })
       });
       await refreshAll(selectedCustomerId, search, customersPage, webhookEventsPage, auditLogsPage);
+      showToast("success", "Subscription created successfully.");
     } catch (err) {
       handleError(err, "Failed to create subscription");
     } finally {
@@ -390,6 +408,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRequest(`/subscriptions/${targetSubscriptionId}/cancel`, { method: "POST" });
       await refreshAll(selectedCustomerId, search, customersPage, webhookEventsPage, auditLogsPage);
+      showToast("success", "Subscription canceled successfully.");
     } catch (err) {
       handleError(err, "Failed to cancel subscription");
     } finally {

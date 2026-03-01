@@ -35,7 +35,7 @@ If no admin exists in the database, the backend creates this admin automatically
 - Stored webhook events and audit logs separately so operational debugging does not depend on application logs.
 - Used a dedicated subscription-plan catalog so admins can manage plan definitions and users only choose from valid plans.
 - Preserved historical subscription records for auditability, while simplifying the customer portal to show only the current actionable subscription state.
-- With more time, I would add stronger test coverage around plan management and webhook edge cases, improve admin feedback/toasts across all flows, and add first-login password reset for seeded or admin-generated accounts.
+- With more time, I would add stronger test coverage around plan management and webhook edge cases, and add first-login password reset for seeded or admin-generated accounts.
 
 ## More Information
 

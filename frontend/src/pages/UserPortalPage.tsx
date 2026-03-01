@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { apiRequest, ApiError } from "../api/client";
 import { TopBar } from "../components/TopBar";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { MeResponse, SubscriptionPlan } from "../types";
 
 export const UserPortalPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { showToast } = useToast();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [kycForm, setKycForm] = useState({ documentType: "", documentNumber: "", notes: "" });
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
 
@@ -28,7 +28,7 @@ export const UserPortalPage = () => {
 
   useEffect(() => {
     Promise.all([loadMe(), loadSubscriptionPlans()])
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load profile"))
+      .catch((err) => showToast("error", err instanceof ApiError ? err.message : "Failed to load profile"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,13 +40,6 @@ export const UserPortalPage = () => {
   const subscriptionStatus = latestSubscription?.status || "INACTIVE";
   const canManageSubscriptions = kycStatus === "APPROVED";
 
-  const showSuccess = (message: string) => {
-    setNotice(message);
-    window.setTimeout(() => {
-      setNotice((current) => (current === message ? "" : current));
-    }, 4000);
-  };
-
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
@@ -56,13 +49,11 @@ export const UserPortalPage = () => {
     event.preventDefault();
     if (!customerId) return;
     if (!kycForm.documentType || !kycForm.documentNumber) {
-      setError("Document type and number are required");
+      showToast("error", "Document type and number are required");
       return;
     }
 
     setActionLoading(true);
-    setError("");
-    setNotice("");
     try {
       await apiRequest(`/customers/${customerId}/kyc/submit`, {
         method: "POST",
@@ -73,9 +64,9 @@ export const UserPortalPage = () => {
         })
       });
       await loadMe();
-      showSuccess(me?.customer?.kyc ? "KYC resubmitted successfully." : "KYC submitted successfully.");
+      showToast("success", me?.customer?.kyc ? "KYC resubmitted successfully." : "KYC submitted successfully.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to submit KYC");
+      showToast("error", err instanceof ApiError ? err.message : "Failed to submit KYC");
     } finally {
       setActionLoading(false);
     }
@@ -83,14 +74,12 @@ export const UserPortalPage = () => {
 
   const onCancelSubscription = async (subscriptionId: string) => {
     setActionLoading(true);
-    setError("");
-    setNotice("");
     try {
       await apiRequest(`/subscriptions/${subscriptionId}/cancel`, { method: "POST" });
       await loadMe();
-      showSuccess("Subscription canceled successfully.");
+      showToast("success", "Subscription canceled successfully.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to cancel subscription");
+      showToast("error", err instanceof ApiError ? err.message : "Failed to cancel subscription");
     } finally {
       setActionLoading(false);
     }
@@ -98,14 +87,12 @@ export const UserPortalPage = () => {
 
   const onStartSubscription = async (subscriptionId: string) => {
     setActionLoading(true);
-    setError("");
-    setNotice("");
     try {
       await apiRequest(`/subscriptions/${subscriptionId}/start`, { method: "POST" });
       await loadMe();
-      showSuccess("Subscription started and is now awaiting payment confirmation.");
+      showToast("success", "Subscription started and is now awaiting payment confirmation.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to start subscription");
+      showToast("error", err instanceof ApiError ? err.message : "Failed to start subscription");
     } finally {
       setActionLoading(false);
     }
@@ -114,17 +101,15 @@ export const UserPortalPage = () => {
   const onChoosePlan = async (planId: string) => {
     if (!customerId) return;
     setActionLoading(true);
-    setError("");
-    setNotice("");
     try {
       await apiRequest(`/customers/${customerId}/subscriptions`, {
         method: "POST",
         body: JSON.stringify({ planId })
       });
       await loadMe();
-      showSuccess("Subscription created and is now awaiting payment confirmation.");
+      showToast("success", "Subscription created and is now awaiting payment confirmation.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to choose subscription plan");
+      showToast("error", err instanceof ApiError ? err.message : "Failed to choose subscription plan");
     } finally {
       setActionLoading(false);
     }
@@ -142,8 +127,6 @@ export const UserPortalPage = () => {
         }
       />
       {loading && <p className="subtle">Loading your profile...</p>}
-      {error && <p className="error-note">{error}</p>}
-      {notice && <p className="success-note">{notice}</p>}
 
       {me?.customer && (
         <>

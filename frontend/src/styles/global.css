@@ -115,6 +115,56 @@ code {
   border-radius: 10px;
 }
 
+.toast-stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 90;
+  display: grid;
+  gap: 0.7rem;
+  width: min(360px, calc(100vw - 2rem));
+}
+
+.toast-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
+  background: #fff;
+  color: var(--ink);
+  animation: toast-in 180ms ease;
+}
+
+.toast-item.success {
+  border-color: #bfe4cd;
+  background: #eefbf3;
+  color: #0e5f36;
+}
+
+.toast-item.error {
+  border-color: #f2c4c4;
+  background: #fff1f1;
+  color: var(--danger);
+}
+
+.toast-item.info {
+  border-color: #d8e4f3;
+  background: #f8fbff;
+  color: #334155;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .center-note {
   min-height: 100vh;
   display: grid;
@@ -975,6 +1025,12 @@ code {
 
   .grid-two {
     grid-template-columns: 1fr;
+  }
+
+  .toast-stack {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
   }
 
   .portal-hero,
