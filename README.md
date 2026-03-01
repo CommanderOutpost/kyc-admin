@@ -41,5 +41,5 @@ If no admin exists in the database, the backend creates this admin automatically
 
 For implementation details:
 
-- Backend setup, API details, env vars, and webhook examples: [backend-api/README.md](/Users/rasheed/Documents/codehub/jobs/fonu/kyc-admin/backend-api/README.md)
-- Frontend routes and local run notes: [frontend/README.md](/Users/rasheed/Documents/codehub/jobs/fonu/kyc-admin/frontend/README.md)
+- Backend setup, API details, env vars, and webhook examples: [backend-api/README.md](backend-api/README.md)
+- Frontend routes and local run notes: [frontend/README.md](frontend/README.md)
