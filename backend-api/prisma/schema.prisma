@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(USER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  customer     Customer?
+  reviewedKycs Kyc[]     @relation("KycReviewedBy")
+  auditLogs    AuditLog[] @relation("AuditActor")
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String
+  address       String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String?        @unique
+  user          User?          @relation(fields: [userId], references: [id])
+  kyc           Kyc?
+  subscriptions Subscription[]
+  auditLogs     AuditLog[]
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  description   String?
+  amount        Int
+  currency      String
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+}
+
+model Kyc {
+  id             String    @id @default(cuid())
+  customerId     String    @unique
+  status         KycStatus @default(PENDING)
+  documentType   String
+  documentNumber String
+  dateSubmitted  DateTime
+  notes          String?
+  rejectionReason String?
+  reviewedAt     DateTime?
+  reviewedById   String?
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reviewedBy     User?     @relation("KycReviewedBy", fields: [reviewedById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  customerId    String
+  planId        String
+  plan          String
+  amount        Int
+  currency      String
+  status        SubscriptionStatus @default(INACTIVE)
+  startDate     DateTime?
+  renewalDate   DateTime?
+  canceledAt    DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  customer      Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptionPlan SubscriptionPlan @relation(fields: [planId], references: [id])
+  webhookEvents WebhookEvent[]
+
+  @@index([planId])
+}
+
+model WebhookEvent {
+  id             String        @id @default(cuid())
+  eventType      String
+  signature      String
+  isValid        Boolean
+  payload        Json
+  processedAt    DateTime?
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  createdAt      DateTime      @default(now())
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  actorId     String?
+  customerId  String?
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  actor       User?     @relation("AuditActor", fields: [actorId], references: [id])
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([customerId])
+  @@index([action])
+  @@index([createdAt])
+}

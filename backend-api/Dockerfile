@@ -1,0 +1,15 @@
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run prisma:generate && npm run build
+
+EXPOSE 4000
+
+CMD ["sh", "-c", "npm run prisma:deploy && npm run start"]
